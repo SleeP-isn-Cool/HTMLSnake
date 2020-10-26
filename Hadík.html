@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head> 			
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Hadík</title>
+		<style>
+			body {
+				background: #000000;
+				text-align: center;
+			}
+
+			canvas {
+				border: 10px solid #B4B4B4;
+			}
+
+			h1 {
+				margin-top: 0;
+				font-size: 4em;
+				font-family: "Arial";
+				letter-spacing: -10px;
+				color:white;
+			}
+			h1 strong {
+				font-size: 1.35em;
+				display: inline-block;
+				margin: 0 0.25em;
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas width="600" height="600"></canvas>
+		<h1>0</h1>
+
+		<script>
+			// začiatok klávesnice
+			document.addEventListener("keydown", keyPush);
+			// Canvas
+			const canvas = document.querySelector("canvas");
+			const title = document.querySelector("h1");
+			const ctx = canvas.getContext("2d");
+			// GamePlay
+			let gameIsRunning = true;
+			const fps = 15;
+			const tileSize = 50;
+			const tileCountX = canvas.width / tileSize;
+			const tileCountY = canvas.height / tileSize;
+			let score = 0;
+			// hráč
+			let snakeSpeed = tileSize;
+			let snakePosX = 0;
+			let snakePosY = canvas.height / 2;
+			let velocityX = 1;
+			let velocityY = 0;
+			let tail = [];
+			let snakeLength = 4;
+			
+			// "jedlo"
+			let foodPosX = 0;
+			let foodPosY = 0;
+
+			// game loop
+			function gameLoop() {
+				if (gameIsRunning) {
+					drawStuff();
+					moveStuff();
+					setTimeout(gameLoop, 1000 / fps);
+				}
+			}
+			resetFood();
+			gameLoop();
+
+			/**
+			 * pohyb
+			 */
+			function moveStuff() {
+				snakePosX += snakeSpeed * velocityX;
+				snakePosY += snakeSpeed * velocityY;
+
+				// presun cez stenu
+				if (snakePosX > canvas.width - tileSize) {
+					snakePosX = 0;
+				}
+				if (snakePosX < 0) {
+					snakePosX = canvas.width;
+				}
+				if (snakePosY > canvas.height - tileSize) {
+					snakePosY = 0;
+				}
+				if (snakePosY < 0) {
+					snakePosY = canvas.height;
+				}
+				// Haha u r ded
+				tail.forEach((snakePart) => {
+					if (snakePosX === snakePart.x && snakePosY === snakePart.y) {
+						gameOver();
+					}
+				});
+				// chvost
+				tail.push({ x: snakePosX, y: snakePosY });
+
+				tail = tail.slice(-1 * snakeLength);
+
+				// jedenie
+				if (snakePosX === foodPosX && snakePosY === foodPosY) {
+					title.textContent = ++score;
+					snakeLength++;
+					resetFood();
+				}
+			}
+			/**
+			 * Grafická časť
+			 */
+			function drawStuff() {
+				// pozadie
+				rectangle("0DE23Dws", 0, 0, canvas.width, canvas.height);
+				drawGrid();
+				// jedlo
+				rectangle("#F11313", foodPosX, foodPosY, tileSize, tileSize);
+				// chvost
+				tail.forEach((snakePart) =>
+					rectangle("#F3FF00", snakePart.x, snakePart.y, tileSize, tileSize)
+				);
+				// hlava hada
+				rectangle("black", snakePosX, snakePosY, tileSize, tileSize);
+			}
+			// rectangle
+			function rectangle(color, x, y, width, height) {
+				ctx.fillStyle = color;
+				ctx.fillRect(x, y, width, height);
+			}
+			// náhodný spawn jedla
+			function resetFood() {
+				if (snakeLength === tileCountX * tileCountY) {
+					gameOver();
+				}
+				foodPosX = Math.floor(Math.random() * tileCountX) * tileSize;
+				foodPosY = Math.floor(Math.random() * tileCountY) * tileSize;
+				// proti spawnovaniu na hlave hada
+				if (foodPosX === snakePosX && foodPosY === snakePosY) {
+					resetFood();
+				}
+				// proti spawnovaniu na ostatných častiach hada
+				if (
+					tail.some(
+						(snakePart) => snakePart.x === foodPosX && snakePart.y === foodPosY
+					)
+				) {
+					resetFood();
+				}
+			}
+			// Zomrel si
+			function gameOver() {
+				title.innerHTML = `G A M E <strong> ${score} </strong> O V E R`;
+				gameIsRunning = false;
+			}
+
+			/**
+			 * Pohyb hráča
+			 */
+			function keyPush(event) {
+				switch (event.key) {
+					case "ArrowLeft":
+						if (velocityX !== 1) {
+							velocityX = -1;
+							velocityY = 0;
+						}
+						break;
+					case "ArrowUp":
+						if (velocityY !== 1) {
+							velocityX = 0;
+							velocityY = -1;
+						}
+						break;
+					case "ArrowRight":
+						if (velocityX !== -1) {
+							velocityX = 1;
+							velocityY = 0;
+						}
+						break;
+					case "ArrowDown":
+						if (velocityY !== -1) {
+							velocityX = 0;
+							velocityY = 1;
+						}
+						break;
+					default:
+						if (!gameIsRunning) location.reload();
+						break;
+				}
+			}
+
+			// výplň pozadia
+			function drawGrid() {
+				for (let i = 0; i < tileCountX; i++) {
+					for (let j = 0; j < tileCountY; j++) {
+						rectangle(
+							"#26DD10",
+							tileSize * i,
+							tileSize * j,
+							tileSize - 1,
+							tileSize - 1
+						);
+					}
+				}
+			}
+		</script>
+	</body>
+</html> 
